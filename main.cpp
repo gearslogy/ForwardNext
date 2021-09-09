@@ -1,43 +1,10 @@
 #include <iostream>
 #include <vector>
-#include <any>
-#include <tuple>
+
+
 #include "PCG_NodePort.h"
 #include "PCG_Types.h"
-
-
-using PCG_AttributeValueType = std::tuple<std::string , std::any, PCG_AttributeTypeInfo >;
-
-
-class PCG_GDP{
-private:
-    std::vector<PCG_AttributeValueType> dataHandle;
-public:
-    template<typename T>
-    static auto createAttribute(std::string_view name, T && value, PCG_AttributeTypeInfo info){
-        return std::make_tuple(std::string(name), std::make_any<T>(std::forward<T>(value)), info );
-    }
-
-    void append( PCG_AttributeValueType && attrib){
-        dataHandle.emplace_back(std::forward<PCG_AttributeValueType>(attrib ));
-    }
-
-    template<typename T>
-    void get(std::string_view name){
-
-    }
-
-    void remove(std::string_view queryName){
-        dataHandle.erase(std::find_if(dataHandle.begin(), dataHandle.end(), [&](auto &&var)
-        {
-            auto name = std::get<std::string>(var);
-            if(name == queryName) return true;
-        }), std::end(dataHandle));
-    }
-
-};
-
-
+#include "PCG_Detail.hpp"
 
 
 
@@ -108,11 +75,17 @@ int main() {
     node2.setInputNode(0, node1,0);
     node3.setInputNode(0, node2, 0);
 
-    PCG_GDP attrib;
-    attrib.append(PCG_GDP::createAttribute("Houdini", 1, PCG_AttributeTypeInfo::P_ATI_INT));
-    attrib.append(PCG_GDP::createAttribute("Nuke", 2, PCG_AttributeTypeInfo::P_ATI_INT));
+    PCG_Detail attrib;
+    attrib.append(PCG_Detail::createAttribute("Houdini", 5555, PCG_AttributeTypeInfo::P_ATI_INT));
+    attrib.append(PCG_Detail::createAttribute("Nuke", 6666, PCG_AttributeTypeInfo::P_ATI_INT));
+    std::cout << attrib.hasAttrib("faster") << std::endl;
 
-
+    auto ret = attrib.getRefAttribValue<int>("houdini");
+    if(ret.has_value()){
+        std::cout << ret->get() << std::endl;
+        ret->get() = 4321; // change houdini attrib
+    }
+    std::cout << attrib.getAttribValue<int>("Houdini").value() << std::endl;
 
     return 0;
 }

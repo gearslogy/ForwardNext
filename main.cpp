@@ -3,16 +3,11 @@
 
 
 #include "PCG_NodePort.h"
-#include "PCG_Types.h"
+
 #include "PCG_Detail.hpp"
 
 
 
-struct Item {
-    std::string name; // for identify
-};
-
-using Item_Array = std::vector<Item>;
 
 
 
@@ -22,8 +17,6 @@ struct PCG_Node {
     PCG_NodePortArray inPorts;
     PCG_NodePortArray outPorts;
 
-    // items handle
-    Item_Array items;
 
     // malloc in ports
     void mallocInPorts(std::vector<PCG_NodePort> &&ports) { inPorts = std::forward<PCG_NodePortArray>(ports); }
@@ -51,7 +44,7 @@ struct PCG_Node {
     }
 
     // set input
-    void setInputNode(uint32_t fromIdx, const PCG_Node &fromNode, uint32_t toIdx) {
+    void setInput(uint32_t fromIdx, const PCG_Node &fromNode, uint32_t toIdx) {
         auto &fromPort = fromNode.getOutPort(fromIdx);
         auto &toThisPort = getInPort(toIdx);
         toThisPort.setInPort(fromPort);
@@ -72,20 +65,24 @@ int main() {
     PCG_Node node3;
     node3.appendInPort(PCG_NodePort{PCG_PortPlugType::IN, "input"});
 
-    node2.setInputNode(0, node1,0);
-    node3.setInputNode(0, node2, 0);
+    node2.setInput(0, node1,0);
+    node3.setInput(0, node2, 0);
 
     PCG_Detail attrib;
-    attrib.append(PCG_Detail::createAttribute("Houdini", 5555, PCG_AttributeTypeInfo::P_ATI_INT));
-    attrib.append(PCG_Detail::createAttribute("Nuke", 6666, PCG_AttributeTypeInfo::P_ATI_INT));
+    attrib.appendAttrib(PCG_Detail::createAttribute("Houdini", 5555, PCG_AttributeTypeInfo::P_ATI_INT));
+    attrib.appendAttrib(PCG_Detail::createAttribute("Nuke", 6666, PCG_AttributeTypeInfo::P_ATI_INT));
     std::cout << attrib.hasAttrib("faster") << std::endl;
 
-    auto ret = attrib.getRefAttribValue<int>("houdini");
+    auto ret = attrib.getRefAttribValue<int>("Houdini");
     if(ret.has_value()){
         std::cout << ret->get() << std::endl;
         ret->get() = 4321; // change houdini attrib
     }
     std::cout << attrib.getAttribValue<int>("Houdini").value() << std::endl;
+    std::cout << attrib << std::endl;
+
+    PCG_Detail attrib2 = attrib;
+    PCG_Detail attrib3 {std::move(attrib2)};
 
     return 0;
 }

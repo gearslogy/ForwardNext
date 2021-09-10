@@ -9,8 +9,8 @@
 #include <tuple>
 #include <ranges>
 #include <algorithm>
-
-
+#include <iostream>
+#include "PCG_Types.h"
 
 using PCG_AttributeValueType = std::tuple<std::string , std::any, PCG_AttributeTypeInfo >;
 
@@ -36,7 +36,7 @@ public:
     }
 
 
-    auto attribNames(){
+    [[nodiscard]] auto attribNames() const{
         std::vector<std::string> ret;
         std::transform(dataHandle.begin(), dataHandle.end(), std::back_inserter(ret), [](auto &&attrib){
             return std::get<std::string> (attrib);
@@ -77,9 +77,13 @@ public:
 
 };
 
-
-inline std::ostream &operator <<( std::ostream &os, const PCG_Detail &&rh){
-
+// print all attribute names
+inline std::ostream &operator <<( std::ostream &os, const PCG_Detail &rh){
+    os << "gdp attribs : ";
+    auto names = rh.attribNames();
+    std::copy(names.begin(),
+              names.end(),
+              std::ostream_iterator<std::string>( os, " "));
     return os;
 }
 

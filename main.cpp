@@ -8,7 +8,6 @@
 
 
 
-
 int main() {
     PCG_Node node1;
     node1.appendOutPort(PCG_NodePort{PCG_PortPlugType::OUT, "out0"});
@@ -28,16 +27,21 @@ int main() {
     attrib.appendAttrib(PCG_Detail::createAttribute("Nuke", 6666, PCG_AttributeTypeInfo::P_ATI_INT));
     std::cout << attrib.hasAttrib("faster") << std::endl;
 
-    auto ret = attrib.getRefAttribValue<int>("Houdini");
-    if(ret.has_value()){
-        std::cout << ret->get() << std::endl;
-        ret->get() = 4321; // change houdini attrib
-    }
-    std::cout << attrib.getAttribValue<int>("Houdini").value() << std::endl;
+    auto ret = attrib.getAttribValue<int>("Houdini");
+    std::cout << ret << std::endl;
+
+    auto &retRef = attrib.getAttribValue<int>("Houdini");
+    retRef = 1000;
+    std::cout << attrib.getAttribValue<int>("Houdini") << std::endl;
+
+    auto &refRef1 = PCG_GetAttribValue<int>(attrib,"Houdini") ;
+    retRef = 2000;
+
+    std::cout << PCG_GetAttribValue<int>(attrib, "Houdini") << std::endl;
+    PCG_SetAttribValue<int>(attrib, "Houdini", 4321);
+    std::cout << PCG_GetAttribValue<int>(attrib, "Houdini") << std::endl;
+
+
     std::cout << attrib << std::endl;
-
-    PCG_Detail attrib2 = attrib;
-    PCG_Detail attrib3 {std::move(attrib2)};
-
     return 0;
 }

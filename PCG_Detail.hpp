@@ -10,6 +10,8 @@
 #include <ranges>
 #include <algorithm>
 #include <iostream>
+#include <optional>
+#include "magic_enum.hpp"
 #include "PCG_Types.h"
 
 using PCG_AttributeValueType = std::tuple<std::string , std::any, PCG_AttributeTypeInfo >;
@@ -32,6 +34,7 @@ public:
         {
             auto name = std::get<std::string>(var);
             if(name == queryName) return true;
+            return false;
         }), std::end(dataHandle));
     }
 
@@ -44,7 +47,15 @@ public:
         return ret;
     }
 
+    // return ref of attrib handles
+    auto & getAttribs(){
+        return dataHandle;
+    }
 
+    // return const ref of attrib handles
+    [[nodiscard]] const auto & getAttribs() const{
+        return dataHandle;
+    }
 
     bool hasAttrib(std::string_view queryName){
         return std::ranges::any_of(dataHandle.begin(), dataHandle.end(), [&](auto && attrib){
@@ -66,7 +77,7 @@ public:
     // return optional ref
     template<typename T>
     auto getRefAttribValue(std::string_view queryName){
-        std::optional<std::reference_wrapper<T>> ret;
+        std::optional<std::reference_wrapper<T> > ret;
         for(auto && attrib : dataHandle){
             if(queryName != std::get<std::string>(attrib)) continue;
             auto &any_var = std::get<std::any>(attrib);
@@ -79,11 +90,17 @@ public:
 
 // print all attribute names
 inline std::ostream &operator <<( std::ostream &os, const PCG_Detail &rh){
-    os << "gdp attribs : ";
-    auto names = rh.attribNames();
-    std::copy(names.begin(),
-              names.end(),
-              std::ostream_iterator<std::string>( os, " "));
+    os << "gdp:" << &rh <<" : ";
+    std::vector<std::string> infos;
+    for(auto &&[name, value, ati] : rh.getAttribs()){
+        auto strType = magic_enum::enum_name(ati);
+        auto ret= name + std::string(": ") + std::string(strType);
+        infos.emplace_back(std::move(ret));
+    }
+
+    std::copy(infos.begin(),
+              infos.end(),
+              std::ostream_iterator<std::string>( os, "\t"));
     return os;
 }
 

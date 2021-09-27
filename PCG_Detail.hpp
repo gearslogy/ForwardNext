@@ -63,8 +63,15 @@ public:
             return name == queryName;
         });
     }
+    auto getAttribType(std::string_view queryName){
+        std::optional<PCG_AttributeTypeInfo> ret{};
+        for(auto &&[name, any_var, ati_info] : dataHandle){
+            if(name == queryName) ret =  ati_info;
+        }
+        return ret;
+    }
 
-    // if attrib exist, return copy of attrib value, or return constructor of T()
+    // get attrib optional value
     template<typename T>
     auto getAttribValue(std::string_view queryName){
         std::optional<T> ret;

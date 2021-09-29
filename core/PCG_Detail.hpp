@@ -4,6 +4,7 @@
 
 #ifndef NODE_AND_ITEMS_PCG_DETAIL_HPP
 #define NODE_AND_ITEMS_PCG_DETAIL_HPP
+#include <vector>
 #include <string>
 #include <any>
 #include <tuple>
@@ -270,8 +271,11 @@ public:
         return *this;
     }
 
-    const PCG_AttribHandle & operator* () const
-    {
+    const PCG_AttribHandle & operator* () const {
+        return detail.getAttrib(index);
+    }
+
+    PCG_AttribHandle & operator* (){
         return detail.getAttrib(index);
     }
 

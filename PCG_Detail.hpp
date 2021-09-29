@@ -21,11 +21,88 @@
 //! @std::string name, @std::any valueHandle, @ati is only register for meta information, this handle attrib
 using PCG_AttribValueType = std::tuple<std::string , std::any, PCG_AttributeTypeInfo >;
 
+class PCG_AttribHandle: public PCG_AttribValueType{
+public:
+    using PCG_AttribValueType::PCG_AttribValueType;
+    constexpr auto &getName(){
+        return std::get<std::string>(*this);
+    }
+    [[nodiscard]] constexpr const auto &getName() const{
+        return std::get<std::string>(*this);
+    }
+    // eval value no check!
+    template<typename T>
+    constexpr auto &getValue() const{
+        auto &handle = *this;
+        auto &var = std::get<std::any>(handle);
+        return std::any_cast<const T&>(var);
+    }
+    template<typename T>
+    constexpr auto &getValue(){
+        return const_cast<T&>(std::as_const(*this).getValue<T>());
+    }
+
+    std::any & getDataHandle(){
+        return std::get<std::any>(*this);
+    }
+
+    [[nodiscard]] const std::any & getDataHandle() const{
+        return std::get<std::any>(*this);
+    }
+
+
+    [[nodiscard]] constexpr auto getInfo() const noexcept{
+        return std::get<PCG_AttributeTypeInfo>(*this);
+    }
+};
+
+// struct binding for PCG_AttribHandle
+template<> struct std::tuple_size<PCG_AttribHandle>{
+    static constexpr int value = 3;
+};
+template<> struct std::tuple_element<0, PCG_AttribHandle>{
+    using type = std::string; // for name
+};
+template<> struct std::tuple_element<1, PCG_AttribHandle>{
+    using type = std::any;  // for value
+};
+template<> struct std::tuple_element<2, PCG_AttribHandle>{
+    using type = PCG_AttributeTypeInfo;
+};
+
+template<std::size_t idx> decltype(auto) get(const PCG_AttribHandle & attrib){
+    static_assert(idx < 3);
+    if constexpr( idx == 0) return attrib.getName();
+    else if constexpr(idx == 1) return attrib.getDataHandle();
+    else{
+        return attrib.getInfo();
+    }
+}
+
+template<std::size_t idx> decltype(auto) get(PCG_AttribHandle & attrib){
+    static_assert(idx < 3);
+    if constexpr( idx == 0) return attrib.getName();
+    else if constexpr(idx == 1) return attrib.getDataHandle();
+    else{
+        return attrib.getInfo();
+    }
+}
+template<std::size_t idx> decltype(auto) get(PCG_AttribHandle && attrib){
+    static_assert(idx < 3);
+    if constexpr( idx == 0) return std::move(attrib.getName());
+    else if constexpr(idx == 1) return std::move(attrib.getDataHandle());
+    else{
+        return attrib.getInfo();
+    }
+}
+
+
+
 
 // attrib value handle, it's a container
 class PCG_Detail{
 private:
-    std::vector<PCG_AttribValueType> dataHandle;
+    std::vector<PCG_AttribHandle> dataHandle;
 public:
     PCG_Detail() = default;
     template<typename T>
@@ -42,11 +119,11 @@ public:
 
     template<typename T>
     static auto createAttrib(std::string_view name, T && value, PCG_AttributeTypeInfo info){
-        return std::make_tuple(std::string(name), std::make_any<T>(std::forward<T>(value)), info );
+        return PCG_AttribHandle{std::string(name), std::make_any<T>(std::forward<T>(value)), info };
     }
 
-    void appendAttrib(PCG_AttribValueType && attrib){
-        dataHandle.emplace_back(std::forward<PCG_AttribValueType>(attrib ));
+    void appendAttrib(PCG_AttribHandle && attrib){
+        dataHandle.emplace_back(std::forward<PCG_AttribHandle>(attrib ));
     }
 
     void removeAttrib(std::string_view queryName){
@@ -86,6 +163,12 @@ public:
     [[nodiscard]] const auto & getAttribs() const{
         return dataHandle;
     }
+    auto &getAttrib(size_t index) {
+        return dataHandle[index];
+    }
+    [[nodiscard]] const auto & getAttrib(size_t index) const{
+        return dataHandle[index];
+    }
 
     auto getAttribType(std::string_view queryName){
         std::optional<PCG_AttributeTypeInfo> ret{};
@@ -108,6 +191,9 @@ public:
         return hasAttrib(name);
     }
 
+    [[nodiscard]] auto size() const{
+        return dataHandle.size();
+    }
 
     // get attrib optional value
     template<typename T>
@@ -172,6 +258,46 @@ inline std::ostream &operator <<( std::ostream &os, const PCG_Detail &rh){
     return os;
 }
 
+template<typename C>
+class PCG_Simple_Iterator{
+public:
+    PCG_Simple_Iterator(C &rh, size_t idx): detail(rh), index(idx){}
+    bool operator!= (PCG_Simple_Iterator const & other) const{
+        return index != other.index;
+    }
+    PCG_Simple_Iterator const & operator++ (){
+        ++index;
+        return *this;
+    }
+
+    const PCG_AttribHandle & operator* () const
+    {
+        return detail.getAttrib(index);
+    }
+
+private:
+    C &detail;
+    int index{};
+};
+
+
+
+inline auto begin(PCG_Detail& detail){
+    return PCG_Simple_Iterator<PCG_Detail>(detail, 0);
+}
+
+inline auto end(PCG_Detail& detail){
+    return PCG_Simple_Iterator<PCG_Detail>(detail, detail.size());
+}
+
+
+inline auto begin(const PCG_Detail& detail){
+    return PCG_Simple_Iterator<const PCG_Detail>(detail, 0);
+}
+
+inline auto end(const PCG_Detail& detail)  {
+    return PCG_Simple_Iterator<const PCG_Detail>(detail, detail.size());
+}
 
 // helper method for functional programming
 template<typename T>

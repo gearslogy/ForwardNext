@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE( unit_test_node )
 
     node2.setInput(0, node1,0);
     node3.setInput(0, node2, 0);
-    std::cout << "**************end of node test**************\n";
+    //std::cout << "**************end of node test**************\n";
 }
 
 #endif //NODE_AND_ITEMS_UNIT_TEST_NODE_CPP

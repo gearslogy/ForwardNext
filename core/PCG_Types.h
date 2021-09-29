@@ -32,7 +32,9 @@ enum class PCG_AttributeTypeInfo{
     P_ATI_DOCUMENT,
 
     P_ATI_DROP_ARRAY_STRING,
-    P_ATI_DROP_ARRAY_REAL
+    P_ATI_DROP_ARRAY_REAL,
+
+    P_ATI_FUNCTION
 };
 
 

@@ -136,6 +136,14 @@ public:
         }), std::end(dataHandle));
     }
 
+    void clear(){
+        dataHandle.clear();
+    }
+
+    size_t numAttribs() const{
+        return dataHandle.size();
+    }
+
     // only change attribute type info
     void setAttribTypeInfo(std::string_view queryName,PCG_AttributeTypeInfo newInfo ){
         for(auto &&[name, value, info] : dataHandle) {
@@ -320,8 +328,11 @@ inline void PCG_SetAttribValue(PCG_Detail &rh, std::string_view name,  T && valu
 // you can change the type  std::get<PCG_AttributeTypeInfo>(ret) = PCG_AttributeTypeInfo::P_ATI_INT;
 template<typename T>
 inline auto PCG_CreateAttrib(std::string_view name, T && value){
-    using value_type = std::remove_cvref_t<T>;
-    PCG_AttribValueType ret = PCG_Detail::createAttrib(name, static_cast<value_type>(value),
+    using rm_ref_type = std::remove_cvref_t<T>;
+    using decay_type = std::decay_t<T>;
+    using value_type = std::conditional_t< std::is_same_v<decay_type, const char *>, std::string, rm_ref_type >;
+
+    auto ret = PCG_Detail::createAttrib(name, static_cast<value_type>(value),
                                                        PCG_AttributeTypeInfo::P_ATI_INVALID);
     if constexpr(std::is_same_v<value_type, int>){
         std::get<PCG_AttributeTypeInfo>(ret) = PCG_AttributeTypeInfo::P_ATI_INT;

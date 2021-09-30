@@ -122,9 +122,16 @@ public:
     static auto createAttrib(std::string_view name, T && value, PCG_AttributeTypeInfo info){
         return PCG_AttribHandle{std::string(name), std::make_any<T>(std::forward<T>(value)), info };
     }
+    template<typename T>
+    static auto createAttrib(std::string_view name, const T & value, PCG_AttributeTypeInfo info){
+        return PCG_AttribHandle{std::string(name), std::make_any<T>(value), info };
+    }
 
     void appendAttrib(PCG_AttribHandle && attrib){
         dataHandle.emplace_back(std::forward<PCG_AttribHandle>(attrib ));
+    }
+    void appendAttrib(const PCG_AttribHandle & attrib){
+        dataHandle.emplace_back(attrib );
     }
 
     void removeAttrib(std::string_view queryName){
@@ -140,7 +147,7 @@ public:
         dataHandle.clear();
     }
 
-    size_t numAttribs() const{
+    [[nodiscard]] size_t numAttribs() const{
         return dataHandle.size();
     }
 

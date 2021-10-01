@@ -62,6 +62,10 @@ BOOST_AUTO_TEST_CASE( unit_test_detail )
     auto path = PCG_CreateAttrib("path", "/geometry/path");   // PCG_AttributeTypeInfo::P_ATI_STR
     gdp.appendAttrib(std::move(path));
 
+    std::string stringVar{"hello world"};
+    gdp.appendAttrib(PCG_CreateAttrib("path1", stringVar));
+
+
     // create vec3 attribute, but as P_ATI_RGB
     auto Cd = PCG_Detail::createAttrib("Cd", glm::vec3{1,2,3}, PCG_AttributeTypeInfo::P_ATI_COLOR_RGB);
     gdp.appendAttrib(std::move(Cd));
@@ -75,7 +79,13 @@ BOOST_AUTO_TEST_CASE( unit_test_detail )
     auto &refFunc = gdp.getAttribValue < std::function < int(int, int) > > ("add");
     auto evalRefFunc = refFunc(1,2);
     BOOST_CHECK_EQUAL(evalRefFunc, 3);
-    BOOST_CHECK_EQUAL(gdp.numAttribs(), 4);
+    BOOST_CHECK_EQUAL(gdp.numAttribs(), 5);
+
+    // array test
+    gdp.appendAttrib(PCG_CreateAttrib("array_float", std::vector<float>{1,2,3,4,5}));
+    gdp.appendAttrib(PCG_CreateAttrib("array_int", std::vector<int>{1,2,3,4,5}));
+
+
     std::cout << gdp << std::endl;
 
 }

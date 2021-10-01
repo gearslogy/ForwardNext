@@ -5,7 +5,6 @@
 #ifndef NODE_AND_ITEMS_PCG_TYPES_H
 #define NODE_AND_ITEMS_PCG_TYPES_H
 
-
 enum class PCG_AttributeTypeInfo{
     P_ATI_INVALID,
 
@@ -24,9 +23,16 @@ enum class PCG_AttributeTypeInfo{
     P_ATI_MAT33,
     P_ATI_MAT44,
 
+    P_ATI_ARRAY_INT,
     P_ATI_ARRAY_FLT,
+    P_ATI_ARRAY_DOUBLE,
     P_ATI_ARRAY_STR,
-    P_ATI_ARRAY_VEC,
+    P_ATI_ARRAY_VEC2,
+    P_ATI_ARRAY_VEC3,
+    P_ATI_ARRAY_VEC4,
+    P_ATI_ARRAY_MAT22,
+    P_ATI_ARRAY_MAT33,
+    P_ATI_ARRAY_MAT44,
 
     P_ATI_FILE,
     P_ATI_DOCUMENT,
@@ -36,7 +42,6 @@ enum class PCG_AttributeTypeInfo{
 
     P_ATI_FUNCTION
 };
-
 
 
 enum class PCG_PortPlugType {

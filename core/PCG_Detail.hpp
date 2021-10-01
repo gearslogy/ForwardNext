@@ -16,8 +16,7 @@
 #include "magic_enum.hpp"
 #include "PCG_Types.h"
 #include <glm/glm.hpp>
-#include <concepts>
-
+#include "PCG_Concept.hpp"
 
 //! @std::string name, @std::any valueHandle, @ati is only register for meta information, this handle attrib
 using PCG_AttribValueType = std::tuple<std::string , std::any, PCG_AttributeTypeInfo >;
@@ -97,17 +96,13 @@ template<std::size_t idx> decltype(auto) get(PCG_AttribHandle && attrib){
     }
 }
 
-
-
-
-// attrib value handle, it's a container
 class PCG_Detail{
 private:
     std::vector<PCG_AttribHandle> dataHandle;
 public:
     PCG_Detail() = default;
     template<typename T>
-    PCG_Detail(std::string_view name, const T && value , PCG_AttributeTypeInfo info){
+    PCG_Detail(std::string_view name, const T & value , PCG_AttributeTypeInfo info){
         auto att = PCG_Detail::createAttrib(name, std::forward<T>(value), info);
         dataHandle.emplace_back(std::move(att));
     }
@@ -202,7 +197,7 @@ public:
         });
     }
     // overload method for attrib that was existed
-    bool hasAttrib(const PCG_AttribValueType & rh){
+    bool hasAttrib(const PCG_AttribHandle & rh){
         auto name = std::get<std::string>(rh);
         return hasAttrib(name);
     }
@@ -258,6 +253,8 @@ public:
 
 };
 
+
+
 // print all attribute names
 inline std::ostream &operator <<( std::ostream &os, const PCG_Detail &rh){
     os << "gdp:" << &rh <<" : ";
@@ -300,7 +297,7 @@ private:
 };
 
 
-
+// --------- helper method for functional programming -------------------
 inline auto begin(PCG_Detail& detail){
     return PCG_Simple_Iterator<PCG_Detail>(detail, 0);
 }
@@ -308,7 +305,6 @@ inline auto begin(PCG_Detail& detail){
 inline auto end(PCG_Detail& detail){
     return PCG_Simple_Iterator<PCG_Detail>(detail, detail.size());
 }
-
 
 inline auto begin(const PCG_Detail& detail){
     return PCG_Simple_Iterator<const PCG_Detail>(detail, 0);
@@ -318,7 +314,6 @@ inline auto end(const PCG_Detail& detail)  {
     return PCG_Simple_Iterator<const PCG_Detail>(detail, detail.size());
 }
 
-// helper method for functional programming
 template<typename T>
 inline decltype(auto) PCG_GetAttribValue( PCG_Detail &rh, std::string_view name){
     return rh.getAttribValue<T>(name);
@@ -333,14 +328,16 @@ inline void PCG_SetAttribValue(PCG_Detail &rh, std::string_view name,  T && valu
 }
 // create attribute, if value is custom user data, the ati of PCG_AttributeValueType is invalid,
 // you can change the type  std::get<PCG_AttributeTypeInfo>(ret) = PCG_AttributeTypeInfo::P_ATI_INT;
-template<typename T>
+// namespace ranges
+
+template<is_not_range T>
 inline auto PCG_CreateAttrib(std::string_view name, T && value){
     using rm_ref_type = std::remove_cvref_t<T>;
     using decay_type = std::decay_t<T>;
     using value_type = std::conditional_t< std::is_same_v<decay_type, const char *>, std::string, rm_ref_type >;
 
     auto ret = PCG_Detail::createAttrib(name, static_cast<value_type>(value),
-                                                       PCG_AttributeTypeInfo::P_ATI_INVALID);
+                                        PCG_AttributeTypeInfo::P_ATI_INVALID);
     if constexpr(std::is_same_v<value_type, int>){
         std::get<PCG_AttributeTypeInfo>(ret) = PCG_AttributeTypeInfo::P_ATI_INT;
     }
@@ -375,4 +372,58 @@ inline auto PCG_CreateAttrib(std::string_view name, T && value){
     }
     return ret;
 }
+
+// create array attribute
+template<typename T, template<typename ELEM, typename ALLOC = std::allocator<ELEM>> class CONT = std::vector >
+inline auto PCG_CreateAttrib(std::string_view name, CONT<T> && value){
+    using rm_ref_type = std::remove_cvref_t<T>;
+    using decay_type = std::decay_t<T>;
+    using value_type = std::conditional_t< std::is_same_v<decay_type, const char *>, std::string, rm_ref_type >;
+
+    auto ret = PCG_Detail::createAttrib(name, std::move(value),
+                                        PCG_AttributeTypeInfo::P_ATI_INVALID);
+    if constexpr(std::is_same_v<value_type, int>){
+        std::get<PCG_AttributeTypeInfo>(ret) = PCG_AttributeTypeInfo::P_ATI_ARRAY_INT;
+    }
+    else if constexpr(std::is_same_v<value_type, float>){
+        std::get<PCG_AttributeTypeInfo>(ret) = PCG_AttributeTypeInfo::P_ATI_ARRAY_FLT;
+    }
+    else if constexpr(std::is_same_v<value_type, double>){
+        std::get<PCG_AttributeTypeInfo>(ret) = PCG_AttributeTypeInfo::P_ATI_ARRAY_DOUBLE;
+    }
+    else if constexpr(std::is_same_v<value_type, std::string>){
+        std::get<PCG_AttributeTypeInfo>(ret) = PCG_AttributeTypeInfo::P_ATI_ARRAY_STR;
+    }
+    else if constexpr(std::is_same_v<value_type, glm::vec2>){
+        std::get<PCG_AttributeTypeInfo>(ret) = PCG_AttributeTypeInfo::P_ATI_ARRAY_VEC2;
+    }
+    else if constexpr(std::is_same_v<value_type, glm::vec3>){
+        std::get<PCG_AttributeTypeInfo>(ret) = PCG_AttributeTypeInfo::P_ATI_ARRAY_VEC3;
+    }
+    else if constexpr(std::is_same_v<value_type, glm::vec4>){
+        std::get<PCG_AttributeTypeInfo>(ret) = PCG_AttributeTypeInfo::P_ATI_ARRAY_VEC4;
+    }
+    else if constexpr(std::is_same_v<value_type, glm::mat2>){
+        std::get<PCG_AttributeTypeInfo>(ret) = PCG_AttributeTypeInfo::P_ATI_ARRAY_MAT22;
+    }
+    else if constexpr(std::is_same_v<value_type, glm::mat3>){
+        std::get<PCG_AttributeTypeInfo>(ret) = PCG_AttributeTypeInfo::P_ATI_ARRAY_MAT33;
+    }
+    else if constexpr(std::is_same_v<value_type, glm::mat4>){
+        std::get<PCG_AttributeTypeInfo>(ret) = PCG_AttributeTypeInfo::P_ATI_ARRAY_MAT44;
+    }
+    else{
+    }
+    return ret;
+}
+
+// append attribute to gdp
+inline void PCG_AppendAttrib(PCG_Detail &detail ,PCG_AttribHandle & attrib){
+    detail.appendAttrib(attrib);
+}
+inline void PCG_AppendAttrib(PCG_Detail &detail , PCG_AttribHandle && attrib){
+    detail.appendAttrib(std::move(attrib));
+}
+
+
 #endif //NODE_AND_ITEMS_PCG_DETAIL_HPP

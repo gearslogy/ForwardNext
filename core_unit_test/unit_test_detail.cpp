@@ -19,64 +19,74 @@
 BOOST_AUTO_TEST_CASE( unit_test_detail )
 {
 
-    PCG_Detail attrib;
-    attrib.appendAttrib(PCG_Detail::createAttrib("Houdini", 5555, PCG_AttributeTypeInfo::P_ATI_INT));
-    attrib.appendAttrib(PCG_Detail::createAttrib("Nuke", 6666, PCG_AttributeTypeInfo::P_ATI_INT));
-    std::cout << attrib.hasAttrib("faster") << std::endl;
+    PCG_Detail gdp;
+    gdp.appendAttrib(PCG_Detail::createAttrib("Houdini", 5555, PCG_AttributeTypeInfo::P_ATI_INT));
+    gdp.appendAttrib(PCG_Detail::createAttrib("Nuke", 6666, PCG_AttributeTypeInfo::P_ATI_INT));
+    std::cout << gdp.hasAttrib("faster") << std::endl;
 
     // get by value
-    auto ret = attrib.getAttribValue<int>("Houdini");
+    auto ret = gdp.getAttribValue<int>("Houdini");
     std::cout << ret << std::endl;
 
     // get by ref
-    auto &retRef = attrib.getAttribValue<int>("Houdini");
+    auto &retRef = gdp.getAttribValue<int>("Houdini");
     retRef = 1000;
-    std::cout << attrib.getAttribValue<int>("Houdini") << std::endl;
+    std::cout << gdp.getAttribValue<int>("Houdini") << std::endl;
 
     // functional programming
-    auto &refRef1 = PCG_GetAttribValue<int>(attrib,"Houdini") ;
+    auto &refRef1 = PCG_GetAttribValue<int>(gdp, "Houdini") ;
     retRef = 2000;
 
-    std::cout << PCG_GetAttribValue<int>(attrib, "Houdini") << std::endl;
-    PCG_SetAttribValue<int>(attrib, "Houdini", 4321);
-    std::cout << PCG_GetAttribValue<int>(attrib, "Houdini") << std::endl;
+    std::cout << PCG_GetAttribValue<int>(gdp, "Houdini") << std::endl;
+    PCG_SetAttribValue<int>(gdp, "Houdini", 4321);
+    std::cout << PCG_GetAttribValue<int>(gdp, "Houdini") << std::endl;
 
     // dump attrib
-    std::cout << attrib << std::endl;
+    std::cout << gdp << std::endl;
 
     // support range-loop
-    for(auto &&r : attrib){
+    for(auto &&r : gdp){
         r.getName() = std::string("xxx");
     }
     //
-    for(auto &&r : attrib){
+    for(auto &&r : gdp){
         std::cout << r.getName()<< std::endl;
     }
-    attrib.clear();
+    gdp.clear();
 
     // functional create vec3 attribute
     auto N = PCG_CreateAttrib("N", glm::vec3{1,2,3}); // PCG_AttributeTypeInfo::P_ATI_VEC3
-    attrib.appendAttrib(std::move(N));
+    gdp.appendAttrib(std::move(N));
 
     // function create the string attrib
     auto path = PCG_CreateAttrib("path", "/geometry/path");   // PCG_AttributeTypeInfo::P_ATI_STR
-    attrib.appendAttrib(std::move(path));
+    gdp.appendAttrib(std::move(path));
+
+    std::string stringVar{"hello world"};
+    gdp.appendAttrib(PCG_CreateAttrib("path1", stringVar));
+
 
     // create vec3 attribute, but as P_ATI_RGB
     auto Cd = PCG_Detail::createAttrib("Cd", glm::vec3{1,2,3}, PCG_AttributeTypeInfo::P_ATI_COLOR_RGB);
-    attrib.appendAttrib(std::move(Cd));
+    gdp.appendAttrib(std::move(Cd));
 
     // create function attribute
     std::function<int(int,int)> func = [](auto x, auto y){return x+y;};
     auto addFuncAttrib = PCG_Detail::createAttrib("add", std::move(func),  PCG_AttributeTypeInfo::P_ATI_FUNCTION);
-    attrib.appendAttrib(std::move(addFuncAttrib));
+    gdp.appendAttrib(std::move(addFuncAttrib));
 
     // retrive add function
-    auto &refFunc = attrib.getAttribValue<std::function<int(int,int) > >("add");
+    auto &refFunc = gdp.getAttribValue < std::function < int(int, int) > > ("add");
     auto evalRefFunc = refFunc(1,2);
     BOOST_CHECK_EQUAL(evalRefFunc, 3);
-    BOOST_CHECK_EQUAL(attrib.numAttribs(), 4);
-    std::cout << attrib << std::endl;
+    BOOST_CHECK_EQUAL(gdp.numAttribs(), 5);
+
+    // array test
+    gdp.appendAttrib(PCG_CreateAttrib("array_float", std::vector<float>{1,2,3,4,5}));
+    gdp.appendAttrib(PCG_CreateAttrib("array_int", std::vector<int>{1,2,3,4,5}));
+
+
+    std::cout << gdp << std::endl;
 
 }
 
